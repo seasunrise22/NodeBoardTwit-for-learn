@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title }}</title>
+    <link rel="stylesheet" href="/main.css">
+    <script src="https://code.jquery.com/jquery-3.7.0.min.js"
+        integrity="sha256-2Pmvv0kuTBOenSvLm6bvfBSSHrUJ+3A7x6P5Ebd07/g=" crossorigin="anonymous">
+        </script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+</head>
+
+<body>
+    <header>
+        <nav>
+            <a href="/" class="btn-home">홈</a>
+            <a href="/notice" class="btn-notice">게시판</a>
+            <ul class="dropdown-account">
+                <button>계정</button>
+                <li>
+                    <div class="window-account">
+                        {% if user and user.id %}
+                        <div><b>{{user.nick}}님 안녕하세요</b></div>
+                        <div><a href="/auth/logout">로그아웃</a></div>
+                        {% else %}
+                        <div><b>비회원</b></div>
+                        <div><a href="/login">로그인</a></div>
+                        {% endif %}
+                    </div>
+                </li>
+            </ul>
+        </nav>
+    </header>
+
+    <div class="article-aside-container">
+        <article>
+            {% block content %}
+            {% endblock %}
+        </article>
+
+        <aside>
+            <div id="aside-container">
+                {% if user %}
+                <div class="twitUploadBox">
+                    <form id="twit-form" action="/twit" method="post" enctype="multipart/form-data">
+                        <div class="input-group">
+                            <textarea id="twit" name="content" maxlength="140"></textarea>
+                        </div>
+                        <div class="img-preview">
+                            <img id="img-preview" src="" style="display: none;" width="250" alt="미리보기">
+                            <input id="img-url" type="hidden" name="url">
+                        </div>
+                        <div class="imgBtnBox">
+                            <label id="img-label" for="img">사진 업로드</label>
+                            <input id="img" type="file" accept="image/*">
+                            <button id="twit-btn" type="submit" class="btn">전송</button>
+                        </div>
+                    </form>
+                </div>
+                {% endif %}
+                <div class="twits">
+                    <input type="text" name="hashtag" placeholder="태그 검색">
+                    <button id="btnSearchHashTag">검색</button>
+                    <div class="twit-list"></div>
+                    <div class="twits-pagination"></div>
+                </div>
+            </div>
+    </div>
+    </aside>
+    </div>
+
+    <script>
+        let hashtag;
+
+        $(document).ready(function () {
+            if (new URL(location.href).searchParams.get('loginError')) {
+                alert(new URL(location.href).searchParams.get('loginError'));
+            }
+
+            loadTwits(1);
+
+        });
+
+        // 계정 버튼 클릭 이벤트 
+        $('.dropdown-account').on('click', function () {
+            // 드롭다운 메뉴 표시
+            $('.dropdown-account li').toggle();
+        });
+
+        // 해시태그 검색 버튼 클릭 이벤트
+        $('#btnSearchHashTag').on('click', function () {
+            hashtag = $(`input[name="hashtag"]`).val();
+            searchTwit(1);
+        });
+
+        // 트윗 검색 기능 구현한 함수
+        function searchTwit(page) {
+            $.ajax({
+                url: '/twit/searchTwits',
+                data: { hashtag, page },
+                success: function (data) {
+                    const twits = data.twits;
+                    const totalTwits = data.totalTwits;
+                    const limit = data.limit;
+
+                    createPaginationButtons(page, totalTwits, limit, 'search');
+
+                    const $twits = $('.twit-list');
+                    $twits.empty();
+
+                    twits.forEach(twit => {
+                        let hashtags = '';
+                        twit.Hashtags.slice().reverse().forEach(hashtag => {
+                            hashtags += `#${hashtag.title} `;
+                        });
+                        console.log('트윗 이미지: ' + twit.img);
+                        const $twit = $(`
+                        <div class="twit">
+                            <b>
+                                <div class="twit-author">${twit.User.nick}</div>
+                            </b>
+                                <span>${hashtags}</span>
+                                <div class="twit-content">${twit.content}</div>
+                                <div class ="twit-img"><img src="${twit.img}" alt=""></div>
+                        </div>
+                        `);
+                        $twits.append($twit);
+                    })
+                },
+                error: function (jqXHR) {
+                    alert(jqXHR.responseJSON.message);
+                }
+            });
+        }
+
+        // // 페이지네이션 버튼 생성 함수
+        function createPaginationButtons(currentPage, totalTwits, limit, what) {
+            const totalPages = Math.ceil(totalTwits / limit);
+            const maxVisibleButtons = 5;
+            let startPage = Math.max(1, currentPage - Math.floor(maxVisibleButtons / 2));
+            let endPage = Math.min(totalPages, startPage + maxVisibleButtons - 1);
+            if (endPage - startPage + 1 < maxVisibleButtons) {
+                startPage = Math.max(1, totalPages - maxVisibleButtons + 1);
+                endPage = totalPages;
+                console.log(startPage + '' + endPage)
+            }
+
+            const $pagination = $('.twits-pagination');
+            $pagination.empty();
+
+            const $firstButton = $('<button>처음</button>')
+            $firstButton.on('click', function () {
+                if (what == 'load') {
+                    loadTwits(1);
+                } else if (what == 'search') {
+                    searchTwit(1);
+                }
+            });
+            $pagination.append($firstButton);
+
+            for (let i = startPage; i <= endPage; i++) {
+                const $button = $(`<button>${i}</button>`);
+                if (i === currentPage) {
+                    $button.addClass('pagination-active');
+                }
+                $button.on('click', function () {
+                    if (what == 'load') {
+                        loadTwits(i);
+                    } else if (what == 'search') {
+                        searchTwit(i);
+                    }
+                });
+                $pagination.append($button);
+            }
+
+            const $lastButton = $('<button>끝</button>');
+            $lastButton.on('click', function () {
+                if (what == 'load') {
+                    loadTwits(totalPages);
+                } else if (what == 'search') {
+                    searchTwit(totalPages);
+                }
+            });
+            $pagination.append($lastButton);
+        }
+
+        // twit 페이지네이션 구현을 위해 비동기적으로 데이터 가져오기
+        function loadTwits(page) {
+            $.ajax({
+                url: '/twit/getTwits',
+                data: { page },
+                success: function (data) {
+                    const twits = data.twits;
+                    const totalTwits = data.totalTwits;
+                    const limit = data.limit;
+
+                    createPaginationButtons(page, totalTwits, limit, 'load');
+
+                    const $twits = $('.twit-list');
+                    $twits.empty();
+
+                    twits.forEach(twit => {
+                        let hashtags = '';
+                        twit.Hashtags.slice().reverse().forEach(hashtag => {
+                            hashtags += `#${hashtag.title} `;
+                        });
+                        const $twit = $(`
+                        <div class="twit">
+                            <b>
+                                <div class="twit-author">${twit.User.nick}</div>
+                            </b>
+                                <span>${hashtags}</span>
+                                <div class="twit-content">${twit.content}</div>
+                                <div class ="twit-img"><img src="${twit.img}" alt=""></div>
+                        </div>
+                        `);
+                        $twits.append($twit);
+                    })
+                },
+            });
+        }
+
+        // 이미지 트윗 전송
+        if (document.getElementById('img')) {
+            document.getElementById('img').addEventListener('change', function (e) {
+                const formData = new FormData();
+                console.log(this, this.files);
+                formData.append('img', this.files[0]);
+                axios.post('/twit/img', formData)
+                    .then((res => {
+                        document.getElementById('img-url').value = res.data.url;
+                        document.getElementById('img-preview').src = res.data.url;
+                        document.getElementById('img-preview').style.display = 'inline';
+                    }))
+                    .catch((err) => {
+                        console.error(err);
+                    });
+            })
+        }
+    </script>
+    {% block script %}
+    {% endblock %}
+</body>
+
+</html>

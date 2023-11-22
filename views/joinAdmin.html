@@ -1,0 +1,36 @@
+{% extends 'layout.html' %}
+
+{% block content %}
+
+<div class="join">
+    <!-- 회원가입 폼 -->
+    <form action="/auth/joinAdmin" class="join-form" method="post">
+        <div class="input-group-join">
+            <label for="join-id">아이디</label>
+            <input type="text" id="join-admin-id" name="adminId">
+        </div>
+        <div class="input-group-join">
+            <label for="join-password">비밀번호</label>
+            <input type="password" id="join-admin-password" name="adminPassword">
+        </div>
+        <div class="input-group-join">
+            <label for="join-key">인증키</label> <!-- 1234 -->
+            <input type="password" id="join-key" name="adminKey">
+        </div>
+        <input type="hidden" name="nick" value="관리자">
+        <button class="btn-join-submit" type="submit">관리자 등록</button>
+    </form>
+</div>
+{% endblock %}
+
+{% block script %}
+<script>
+    window.onload = () => {
+        const errorParam = new URL(location.href).searchParams.get('error');
+        const errorMessage = errorParam ? decodeURIComponent(errorParam) : null;
+        if (errorMessage) {
+            alert(errorMessage);
+        }
+    };
+</script>
+{% endblock %}

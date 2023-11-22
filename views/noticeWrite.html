@@ -1,0 +1,71 @@
+{% extends 'layout.html' %}
+
+{% block content %}
+<h1>공지사항 작성</h1>
+<div class="noticeWriteReadContainer">
+    <form action="/post/notice" method="post" enctype="multipart/form-data">
+        <div class="noticeReadWriteRow">
+            <label for="noticeTitle">제목</label>
+            <input type="text" id="noticeTitle" name="noticeTitle" required>
+        </div>
+        <div class="noticeReadWriteRow">
+            <label for="noticeContent">내용</label>
+            <textarea name="noticeContent" id="noticeContent" required></textarea>
+        </div>
+        <div class="noticeReadWriteRow">
+            <label for="noticeFile">파일 업로드</label>
+            <input type="file" id="noticeFile">
+            <input id="file-url" type="hidden" name="url">
+        </div>
+        <div class="noticeBoardSubmitBtnBox">
+            <button type="submit" class="noticeWriteBtn">전송</button>
+            <button type="button" class="noticeWriteBtn" onclick="sendFakeData()">가짜 게시글 100개 생성</button>
+        </div>
+    </form>
+</div>
+
+<script>
+    function sendFakeData() {
+        // 서버에 요청을 보냄
+        fetch('/fake/notice', {
+            method: 'POST',
+        })
+            .then(response => {
+                if (response.ok) {
+                    return response.json();
+                } else {
+                    throw new Error('오류가 발생했습니다.');
+                }
+            })
+            .then(data => {
+                alert(data.message);
+                window.location.href = '/notice';
+            })
+            .catch(error => {
+                // 오류 처리
+                alert(error.message);
+            });
+    }
+
+    // 파일 전송 처리
+    if (document.getElementById('noticeFile')) {
+        document.getElementById('noticeFile').addEventListener('change', function (e) {
+            const formData = new FormData();
+            console.log(this, this.files);
+            formData.append('noticeFile', this.files[0]);
+            axios.post('/post/file', formData)
+                .then((res => {
+                    document.getElementById('file-url').value = res.data.url;
+                }))
+                .catch((err) => {
+                    console.error(err);
+                });
+        })
+    }
+</script>
+
+<style>
+
+
+</style>
+{% endblock %}

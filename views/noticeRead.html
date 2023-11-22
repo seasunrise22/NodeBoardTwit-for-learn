@@ -1,0 +1,33 @@
+{% extends 'layout.html' %}
+
+{% block content %}
+<h1>공지사항 게시물</h1>
+<div class="noticeWriteReadContainer">
+    <div class="noticeReadWriteRow">
+        <label for="noticeReadTitle">제목</label>
+        <div id="noticeReadTitle">{{title}}</div>
+    </div>
+    <div class="noticeReadWriteRow">
+        <label for="noticeReadContent">내용</label>
+        <div id="noticeReadContent">{{content}}</div>
+    </div>
+    <div class="noticeReadWriteRow">
+        <label for="noticeReadFile">파일</label>
+        <div id="noticeReadFile"><a href="/post/fileDownload/{{file | replace('/file/', '')}}">{{file |
+                replace('/file/', '')}}</a></div>
+    </div>
+</div>
+
+<script>
+</script>
+
+<style>
+    #noticeReadContent {
+        height: 400px;
+    }
+
+    #noticeReadFile {
+        height: 50px;
+    }
+</style>
+{% endblock %}

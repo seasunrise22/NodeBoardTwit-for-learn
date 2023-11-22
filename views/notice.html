@@ -1,0 +1,204 @@
+{% extends 'layout.html' %}
+
+{% block content %}
+<h1>공지사항</h1>
+<!-- <div class="noticeSearchBox">
+    <label for="noticeSearchOption">검색</label>
+    <select id="noticeSearchOption">
+        <option value="title">제목</option>
+        <option value="content">내용</option>
+    </select>
+    <input type="text" id="searchText" placeholder="검색어를 입력해주세요.">
+    <button>조회</button>
+</div> -->
+
+<div id="noticeBoardContainer">
+    <table style="table-layout: fixed;">
+        <colgroup>
+            <col style="width: 5%"> <!-- 번호 -->
+            <col> <!-- 제목 -->
+            <col style="width: 12%"><!-- 파일 -->
+            <col style="width: 10%"><!-- 등록일 -->
+        </colgroup>
+        <thead>
+            <tr>
+                <td colspan="4" id="noticeBoardTotalCount"></td>
+            <tr>
+                <th>번호</th>
+                <th>제목</th>
+                <th>파일</th>
+                <th>등록일</th>
+        </thead>
+        <tbody id="noticeTableBody">
+            <!-- 공지사항 게시물 들어가는 공간 -->
+        </tbody>
+    </table>
+</div>
+<div class="noticeBoardBtnBox">
+    <div id="noticeBoardPagination"></div>
+    <div class="noticeBoardSubmitBtnBox">
+        {% if user and user.isAdmin %}
+        <a href="/notice/write" class="noticeWriteBtn btn-hover">글쓰기</a>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+    // 페이지 로드되면 실행
+    $(document).ready(function () {
+        fetchNoticePosts(1);
+    });
+
+    // 페이지네이션 버튼 구현(동적으로 처음과 끝 버튼이 변하는 게 아니라 페이지 넘기는 형식)
+    function createNoticePaginationButtons(startPost, totalPosts, limit) {
+        const totalPages = Math.ceil(totalPosts / limit);
+        let startPage = startPost;
+        let endPage = startPost + 9;
+        if (totalPages < endPage) {
+            endPage = totalPages;
+        }
+
+        const $pagination = $('#noticeBoardPagination');
+        $pagination.empty();
+
+        // 처음 버튼
+        const $firstButton = $(`<button>처음</button>`);
+        $firstButton.on('click', () => {
+            fetchNoticePosts(1);
+        })
+        $pagination.append($firstButton);
+
+
+        // 이전 버튼
+        const $prevButton = $(`<button>이전</button>`);
+        $prevButton.on('click', () => {
+            if (startPage != 1) {
+                fetchNoticePosts(startPage - 10);
+            }
+        })
+        $pagination.append($prevButton);
+
+        // 페이지네이션 버튼들
+        for (let i = startPage; i <= endPage; i++) {
+            const $button = $(`<button>${i}</button>`);
+            $button.on('click', () => {
+                fetchNoticePosts(i);
+            });
+            $pagination.append($button);
+        }
+
+        // 다음 버튼
+        const $nextButton = $(`<button>다음</button>`);
+        $nextButton.on('click', () => {
+            if (endPage != totalPages) {
+                fetchNoticePosts(endPage + 1);
+            }
+        })
+        $pagination.append($nextButton);
+
+        // 끝 버튼
+        const $lastButton = $(`<button>끝</button>`);
+        $lastButton.on('click', () => {
+            fetchNoticePosts(totalPages);
+        })
+        $pagination.append($lastButton);
+    }
+
+    // ajax 쓰지 않고 동기적으로 페이지 가져오도록 구현해볼거임
+    async function fetchNoticePosts(page) {
+        try {
+            const response = await $.get('/post/noticeGetPosts', { page });
+            const noticePosts = response.formattedPosts;
+            const totalPosts = response.totalPosts;
+            const limit = response.limit;
+
+            const startPage = Math.floor((page - 1) / 10) * 10 + 1;
+            createNoticePaginationButtons(startPage, totalPosts, limit);
+
+            const noticeBoardTotalCount = $('#noticeBoardTotalCount');
+            const noticeTableBody = $('#noticeTableBody');
+            noticeBoardTotalCount.empty();
+            noticeTableBody.empty();
+
+            // 총 게시물 숫자 표시
+            noticeBoardTotalCount.text(`총 ${totalPosts}건`);
+
+            noticeBoardTotalCount.append
+
+            noticePosts.forEach(function (post) {
+                const row = $('<tr>');
+
+                const numberCell = $('<td>').text(post.id);
+                const titleLink = $('<a>').attr('href', `/post/notice/${post.id}`).text(post.title);
+                const titleCell = $('<td>').addClass('ellipsis').append(titleLink);
+                let filename = '';
+                let fileLink = '';
+                if (post.file) {
+                    filename = post.file.replace('/file/', '');
+                    fileLink = $('<a>').attr('href', `/post/fileDownload/${filename}`).text(filename);
+                }
+                const fileCell = $('<td>').addClass('ellipsis').append(fileLink);
+                const createdAtCell = $('<td>').text(post.createdAt);
+
+                row.append(numberCell);
+                row.append(titleCell);
+                row.append(fileCell);
+                row.append(createdAtCell);
+
+                noticeTableBody.append(row);
+            });
+        } catch (error) {
+            console.error(error);
+        }
+    }
+</script>
+
+<style>
+    .ellipsis {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        text-align: left;
+    }
+
+    #noticeBoardTotalCount {
+        text-align: left;
+    }
+
+    #noticeBoardPagination {
+        display: flex;
+        justify-content: center;
+    }
+
+    #noticeBoardPagination button {
+        width: 50px;
+        height: 40px;
+        margin: 5px 2px;
+    }
+
+    #noticeBoardContainer {
+        display: flex;
+        justify-content: center;
+        border: 1px solid black;
+        margin-top: 10px;
+    }
+
+    #noticeBoardContainer a {
+        text-decoration: none;
+        color: black;
+    }
+
+    #noticeBoardContainer table {
+        border: 1px solid black;
+        width: 100%;
+        border-collapse: collapse;
+        text-align: center;
+    }
+
+    #noticeBoardContainer tr,
+    #noticeBoardContainer th,
+    #noticeBoardContainer td {
+        border: 1px solid black;
+    }
+</style>
+{% endblock %}
