@@ -134,5 +134,14 @@ router.post('/login', isNotLoggedIn, login);
 2. models/index.js 파일에서 sequelize 객체를 생성할 때 config.json 파일의 정보를 인자로 전달
 3. 터미널에 **npx sequelize db:create** 를 입력하여 데이터베이스를 생성(**db:create** 명령은 자동으로 models 하위의 index.js 파일을 찾아갑니다.)
 4. 서버가 시작되면 **sequelize.sync** 메서드를 통해 자동으로 데이터베이스 동기화가 진행
- 
+
+## 트윗 게시글과 해시태그의 N:M 관계
+![twittable](https://github.com/user-attachments/assets/cb3b3d7b-ed9b-443c-88af-b6d24a129917)
+
+---
+![hashtagtable](https://github.com/user-attachments/assets/3cc49993-d083-471c-9057-e79adab77e11)
+
+---
+![twithashtagtable](https://github.com/user-attachments/assets/a910aaa5-68e9-441d-9fc3-c79b478bc983)
+
 ---
