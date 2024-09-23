@@ -20,8 +20,8 @@ Node 를 활용하여 기본적인 웹 애플리케이션을 개발해보고자 
 3. 게시판
 4. Twit(짧은 글) 작성
 ## Development Environment
-- Node(18.15.0)
-- MySQL(5.7.43)
+- Node(18.15.0)(18.20.4)
+- MySQL(5.7.43)(8.0.39)
 - vscode
 ## Screenshots
 ## 1. 회원가입
